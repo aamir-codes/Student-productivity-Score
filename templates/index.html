@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudyIQ — Productivity Predictor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+/* ── Reset & Base ───────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --ink:       #0a0a0f;
+  --ink-2:     #1c1c28;
+  --ink-3:     #2e2e42;
+  --muted:     #6b6b85;
+  --line:      #e8e8f0;
+  --paper:     #f7f7fc;
+  --white:     #ffffff;
+  --accent:    #4f46e5;
+  --accent-2:  #7c3aed;
+  --green:     #10b981;
+  --amber:     #f59e0b;
+  --red:       #ef4444;
+  --card-bg:   rgba(255,255,255,0.85);
+  --radius:    16px;
+  --radius-sm: 8px;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Syne', sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── Background pattern ─────────────────────────────────────── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 10% 0%, rgba(79,70,229,.08) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 90% 100%, rgba(124,58,237,.07) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 40% at 50% 50%, rgba(16,185,129,.04) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+body > * { position: relative; z-index: 1; }
+
+/* ── Nav ────────────────────────────────────────────────────── */
+nav {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1.2rem 2.5rem;
+  border-bottom: 1px solid var(--line);
+  backdrop-filter: blur(12px);
+  background: rgba(247,247,252,.8);
+  position: sticky; top: 0; z-index: 100;
+}
+
+.logo {
+  font-size: 1.25rem; font-weight: 800; letter-spacing: -0.03em;
+  display: flex; align-items: center; gap: .5rem;
+}
+.logo-dot { width:8px;height:8px;border-radius:50%;background:var(--accent); display:inline-block; }
+.logo span { color: var(--accent); }
+
+.nav-badge {
+  font-family: 'DM Mono', monospace;
+  font-size: .7rem; font-weight: 500;
+  background: var(--ink); color: var(--white);
+  padding: .3rem .8rem; border-radius: 20px;
+  letter-spacing: .04em;
+}
+
+/* ── Hero ───────────────────────────────────────────────────── */
+.hero {
+  max-width: 1100px; margin: 0 auto;
+  padding: 5rem 2rem 2rem;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 4rem;
+  align-items: center;
+}
+
+.hero-text { animation: fadeUp .7s ease both; }
+
+.hero-kicker {
+  font-family: 'DM Mono', monospace;
+  font-size: .72rem; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--accent); font-weight: 500;
+  display: inline-flex; align-items: center; gap: .5rem;
+  margin-bottom: 1.2rem;
+}
+.hero-kicker::before {
+  content: ''; display: block; width: 24px; height: 1px; background: var(--accent);
+}
+
+.hero h1 {
+  font-size: clamp(2.4rem, 4vw, 3.4rem);
+  font-weight: 800; line-height: 1.08;
+  letter-spacing: -.04em;
+  margin-bottom: 1.2rem;
+}
+.hero h1 em {
+  font-family: 'Instrument Serif', serif;
+  font-style: italic; font-weight: 400;
+  color: var(--accent);
+}
+
+.hero-sub {
+  font-size: 1.05rem; line-height: 1.7; color: var(--muted);
+  max-width: 460px; margin-bottom: 2rem;
+}
+
+.hero-stats {
+  display: flex; gap: 2rem;
+}
+.stat { text-align: left; }
+.stat-num {
+  font-size: 1.8rem; font-weight: 800; letter-spacing: -.04em;
+  color: var(--ink);
+}
+.stat-num span { color: var(--accent); }
+.stat-label {
+  font-size: .72rem; color: var(--muted); font-weight: 500;
+  letter-spacing: .04em; text-transform: uppercase;
+  font-family: 'DM Mono', monospace;
+}
+
+.hero-visual {
+  animation: fadeUp .7s .15s ease both;
+  display: flex; justify-content: center;
+}
+
+/* Score ring preview */
+.ring-preview {
+  width: 220px; height: 220px;
+  border-radius: 50%;
+  background: conic-gradient(var(--accent) 0% 70%, var(--line) 70% 100%);
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+  box-shadow: 0 24px 64px rgba(79,70,229,.2);
+}
+.ring-preview::before {
+  content: ''; position: absolute; inset: 18px;
+  border-radius: 50%; background: var(--paper);
+}
+.ring-preview-inner {
+  position: relative; z-index: 1; text-align: center;
+}
+.ring-preview-inner .num {
+  font-size: 2.8rem; font-weight: 800; letter-spacing: -.04em; color: var(--ink);
+}
+.ring-preview-inner .label {
+  font-family: 'DM Mono', monospace;
+  font-size: .65rem; color: var(--muted); letter-spacing: .08em;
+}
+
+/* ── Main layout ────────────────────────────────────────────── */
+.main {
+  max-width: 1100px; margin: 0 auto;
+  padding: 2rem 2rem 6rem;
+  display: grid; grid-template-columns: 1.15fr 1fr;
+  gap: 2rem; align-items: start;
+}
+
+/* ── Card base ──────────────────────────────────────────────── */
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 2px 20px rgba(0,0,0,.04), 0 1px 4px rgba(0,0,0,.04);
+}
+
+/* ── Form card ──────────────────────────────────────────────── */
+.form-card { padding: 2rem; }
+
+.form-title {
+  font-size: 1rem; font-weight: 700; letter-spacing: -.02em;
+  margin-bottom: .3rem;
+}
+.form-subtitle {
+  font-size: .82rem; color: var(--muted); margin-bottom: 1.8rem;
+  font-family: 'DM Mono', monospace;
+}
+
+/* Section headers */
+.section-label {
+  font-family: 'DM Mono', monospace;
+  font-size: .62rem; font-weight: 500; text-transform: uppercase;
+  letter-spacing: .12em; color: var(--accent);
+  margin: 1.4rem 0 .8rem;
+  display: flex; align-items: center; gap: .6rem;
+}
+.section-label::after {
+  content: ''; flex: 1; height: 1px; background: var(--line);
+}
+
+.fields-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: .75rem;
+}
+.fields-grid.trio { grid-template-columns: 1fr 1fr 1fr; }
+.fields-grid.full { grid-template-columns: 1fr; }
+
+.field { display: flex; flex-direction: column; gap: .35rem; }
+
+.field label {
+  font-size: .72rem; font-weight: 600; color: var(--ink-3);
+  letter-spacing: .01em;
+}
+.field .unit {
+  font-family: 'DM Mono', monospace;
+  font-size: .6rem; color: var(--muted); font-weight: 400;
+}
+
+.field input, .field select {
+  font-family: 'Syne', sans-serif;
+  font-size: .88rem; font-weight: 500;
+  background: var(--paper);
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: .55rem .85rem;
+  color: var(--ink);
+  transition: border-color .2s, box-shadow .2s;
+  width: 100%;
+  appearance: none;
+}
+.field input:focus, .field select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(79,70,229,.1);
+}
+
+/* range slider */
+.range-wrap { position: relative; }
+.field input[type="range"] {
+  -webkit-appearance: none; appearance: none;
+  background: transparent; padding: 0;
+  border: none; cursor: pointer;
+  box-shadow: none;
+}
+.field input[type="range"]::-webkit-slider-runnable-track {
+  height: 5px; border-radius: 3px;
+  background: linear-gradient(to right, var(--accent) 0%, var(--accent) var(--pct,50%), var(--line) var(--pct,50%), var(--line) 100%);
+}
+.field input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--white); border: 2px solid var(--accent);
+  margin-top: -6.5px;
+  box-shadow: 0 2px 8px rgba(79,70,229,.25);
+}
+.range-val {
+  position: absolute; right: 0; top: 0;
+  font-family: 'DM Mono', monospace; font-size: .7rem;
+  font-weight: 500; color: var(--accent);
+  background: rgba(79,70,229,.1); padding: .1rem .4rem;
+  border-radius: 4px;
+}
+
+/* Gender toggle */
+.gender-toggle {
+  display: flex; gap: .5rem;
+}
+.gender-btn {
+  flex: 1; padding: .55rem;
+  border: 1.5px solid var(--line); border-radius: var(--radius-sm);
+  background: var(--paper); font-family: 'Syne', sans-serif;
+  font-size: .82rem; font-weight: 600; color: var(--muted);
+  cursor: pointer; transition: all .2s;
+  text-align: center;
+}
+.gender-btn.active {
+  border-color: var(--accent);
+  background: rgba(79,70,229,.07);
+  color: var(--accent);
+}
+
+/* Submit button */
+.btn-predict {
+  margin-top: 1.6rem; width: 100%;
+  padding: .95rem;
+  background: var(--ink);
+  color: var(--white);
+  border: none; border-radius: var(--radius-sm);
+  font-family: 'Syne', sans-serif;
+  font-size: .95rem; font-weight: 700;
+  letter-spacing: -.01em;
+  cursor: pointer;
+  transition: all .2s;
+  display: flex; align-items: center; justify-content: center; gap: .6rem;
+  position: relative; overflow: hidden;
+}
+.btn-predict::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  opacity: 0; transition: opacity .2s;
+}
+.btn-predict:hover::before { opacity: 1; }
+.btn-predict span { position: relative; z-index: 1; }
+.btn-predict:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(79,70,229,.3); }
+.btn-predict:active { transform: translateY(0); }
+.btn-predict.loading span.label::after { content: '...'; }
+
+/* ── Results panel ──────────────────────────────────────────── */
+.results-panel { display: flex; flex-direction: column; gap: 1.25rem; }
+
+/* Score card */
+.score-card {
+  padding: 1.8rem;
+  text-align: center;
+  position: relative; overflow: hidden;
+  transition: all .5s ease;
+}
+.score-card::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(79,70,229,.06), rgba(124,58,237,.06));
+  opacity: 0; transition: opacity .5s;
+}
+.score-card.revealed::before { opacity: 1; }
+
+.score-ring-wrap {
+  display: flex; justify-content: center; margin-bottom: 1.2rem;
+}
+.score-ring {
+  width: 160px; height: 160px; position: relative;
+}
+.score-ring svg {
+  width: 100%; height: 100%; transform: rotate(-90deg);
+}
+.score-ring circle {
+  fill: none; stroke-width: 10;
+  stroke-linecap: round;
+}
+.ring-bg { stroke: var(--line); }
+.ring-fill {
+  stroke: var(--accent);
+  stroke-dasharray: 440;
+  stroke-dashoffset: 440;
+  transition: stroke-dashoffset 1.5s cubic-bezier(.4,0,.2,1), stroke .5s;
+}
+.score-ring-inner {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+}
+.score-number {
+  font-size: 2.6rem; font-weight: 800; letter-spacing: -.05em;
+  line-height: 1;
+  transition: color .5s;
+}
+.score-max {
+  font-family: 'DM Mono', monospace;
+  font-size: .6rem; color: var(--muted);
+}
+
+.score-label {
+  font-size: 1.4rem; font-weight: 800; letter-spacing: -.03em;
+  margin-bottom: .3rem;
+}
+.score-desc {
+  font-size: .82rem; color: var(--muted); font-family: 'DM Mono', monospace;
+}
+
+/* Level badge */
+.level-badge {
+  display: inline-flex; align-items: center; gap: .4rem;
+  padding: .35rem 1rem; border-radius: 20px;
+  font-size: .75rem; font-weight: 700;
+  margin-top: .6rem; margin-bottom: .2rem;
+  letter-spacing: .02em;
+}
+.badge-low    { background: rgba(239,68,68,.12);  color: var(--red);   }
+.badge-medium { background: rgba(245,158,11,.12); color: var(--amber); }
+.badge-high   { background: rgba(16,185,129,.12); color: var(--green); }
+
+/* Threshold bar */
+.thresh-bar-wrap {
+  margin: 1rem 1.8rem 0;
+}
+.thresh-labels {
+  display: flex; justify-content: space-between;
+  font-family: 'DM Mono', monospace; font-size: .6rem; color: var(--muted);
+  margin-bottom: .3rem;
+}
+.thresh-bar {
+  height: 6px; border-radius: 3px;
+  background: linear-gradient(to right, var(--red) 0%, var(--amber) 42.58%, var(--green) 57.93%);
+  position: relative;
+}
+.thresh-marker {
+  position: absolute; top: -4px;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--white); border: 2.5px solid var(--ink);
+  transform: translateX(-50%);
+  transition: left 1.5s cubic-bezier(.4,0,.2,1);
+  left: 50%;
+  box-shadow: 0 2px 8px rgba(0,0,0,.15);
+}
+
+/* ── Mini metric cards ──────────────────────────────────────── */
+.metrics-row {
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: .75rem;
+}
+.metric-card {
+  padding: 1rem; border-radius: var(--radius-sm);
+  background: var(--card-bg);
+  border: 1px solid var(--line);
+  text-align: center;
+}
+.metric-icon { font-size: 1.3rem; margin-bottom: .3rem; }
+.metric-val {
+  font-size: 1.1rem; font-weight: 800; letter-spacing: -.03em; color: var(--ink);
+}
+.metric-name {
+  font-family: 'DM Mono', monospace;
+  font-size: .6rem; color: var(--muted); text-transform: uppercase;
+  letter-spacing: .06em; margin-top: .2rem;
+}
+
+/* ── Tips card ──────────────────────────────────────────────── */
+.tips-card { padding: 1.5rem; }
+.tips-title {
+  font-size: .82rem; font-weight: 700; letter-spacing: -.01em;
+  margin-bottom: 1rem; display: flex; align-items: center; gap: .4rem;
+}
+.tips-list { display: flex; flex-direction: column; gap: .7rem; }
+.tip-item {
+  display: flex; gap: .75rem; align-items: flex-start;
+  font-size: .82rem; line-height: 1.55; color: var(--ink-3);
+  padding: .7rem .9rem;
+  background: var(--paper); border-radius: var(--radius-sm);
+  border-left: 3px solid var(--accent);
+  animation: fadeUp .4s ease both;
+}
+
+/* ── Feature importance bars ────────────────────────────────── */
+.importance-card { padding: 1.5rem; }
+.importance-title {
+  font-size: .82rem; font-weight: 700; margin-bottom: 1rem;
+  display: flex; align-items: center; gap: .4rem;
+}
+.imp-row {
+  display: flex; align-items: center; gap: .75rem;
+  margin-bottom: .6rem;
+}
+.imp-name {
+  font-family: 'DM Mono', monospace; font-size: .65rem;
+  color: var(--muted); width: 130px; flex-shrink: 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.imp-bar-bg {
+  flex: 1; height: 7px; background: var(--line); border-radius: 4px; overflow: hidden;
+}
+.imp-bar-fill {
+  height: 100%; border-radius: 4px;
+  background: linear-gradient(to right, var(--accent), var(--accent-2));
+  width: 0%; transition: width 1s cubic-bezier(.4,0,.2,1);
+}
+.imp-pct {
+  font-family: 'DM Mono', monospace; font-size: .65rem;
+  color: var(--accent); width: 32px; text-align: right; flex-shrink: 0;
+}
+
+/* ── Placeholder state ──────────────────────────────────────── */
+.placeholder-state {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 3rem 2rem; text-align: center;
+  color: var(--muted);
+}
+.placeholder-state .ph-icon {
+  font-size: 3rem; margin-bottom: 1rem; opacity: .4;
+}
+.placeholder-state p {
+  font-size: .85rem; line-height: 1.6;
+  font-family: 'DM Mono', monospace;
+}
+
+/* ── Loading overlay ────────────────────────────────────────── */
+.spinner {
+  width: 20px; height: 20px; border-radius: 50%;
+  border: 2.5px solid rgba(255,255,255,.3);
+  border-top-color: #fff;
+  animation: spin .7s linear infinite;
+  display: none;
+}
+.btn-predict.loading .spinner { display: block; }
+.btn-predict.loading .label { opacity: .7; }
+
+/* ── Animations ─────────────────────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(16px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Footer ─────────────────────────────────────────────────── */
+footer {
+  border-top: 1px solid var(--line);
+  padding: 1.5rem 2.5rem;
+  display: flex; justify-content: space-between; align-items: center;
+  font-family: 'DM Mono', monospace; font-size: .68rem; color: var(--muted);
+}
+
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 860px) {
+  .hero  { grid-template-columns: 1fr; gap: 2rem; padding-top: 3rem; }
+  .hero-visual { display: none; }
+  .main  { grid-template-columns: 1fr; }
+  .fields-grid.trio { grid-template-columns: 1fr 1fr; }
+  .metrics-row { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 520px) {
+  nav { padding: 1rem 1.2rem; }
+  .hero { padding: 2rem 1.2rem 1rem; }
+  .main { padding: 1rem 1.2rem 4rem; }
+  .fields-grid, .fields-grid.trio { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav>
+  <div class="logo">
+    <span class="logo-dot"></span>
+    Study<span>IQ</span>
+  </div>
+  <span class="nav-badge">ML · R² 0.98</span>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-text">
+    <div class="hero-kicker">AI-Powered Academic Intelligence</div>
+    <h1>Predict Your<br><em>Productivity</em><br>Score</h1>
+    <p class="hero-sub">
+      Enter your daily habits — study hours, sleep, screen time, and stress —
+      and our Random Forest model (trained on 20,000 students) predicts
+      your academic productivity score instantly.
+    </p>
+    <div class="hero-stats">
+      <div class="stat">
+        <div class="stat-num">20<span>K</span></div>
+        <div class="stat-label">Students trained</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">0.98</div>
+        <div class="stat-label">R² accuracy</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">16</div>
+        <div class="stat-label">Features used</div>
+      </div>
+    </div>
+  </div>
+  <div class="hero-visual">
+    <div class="ring-preview">
+      <div class="ring-preview-inner">
+        <div class="num">—</div>
+        <div class="label">YOUR SCORE</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Main -->
+<section class="main">
+
+  <!-- Form -->
+  <div class="card form-card">
+    <div class="form-title">Your Academic Profile</div>
+    <div class="form-subtitle">All fields are required · Takes ~30 seconds</div>
+
+    <form id="predictForm" novalidate>
+
+      <!-- Personal -->
+      <div class="section-label">Personal Info</div>
+      <div class="fields-grid">
+        <div class="field">
+          <label>Age <span class="unit">(17–29)</span></label>
+          <input type="number" id="age" min="17" max="29" value="21" required>
+        </div>
+        <div class="field">
+          <label>Gender</label>
+          <div class="gender-toggle">
+            <button type="button" class="gender-btn active" data-val="female" onclick="setGender(this)">Female</button>
+            <button type="button" class="gender-btn" data-val="male" onclick="setGender(this)">Male</button>
+          </div>
+          <input type="hidden" id="gender" value="female">
+        </div>
+      </div>
+
+      <!-- Academic -->
+      <div class="section-label">Academic Habits</div>
+      <div class="fields-grid">
+        <div class="field">
+          <label>Study Hours / Day <span class="unit">(hrs)</span></label>
+          <input type="number" id="study_hours_per_day" step="0.1" min="0.5" max="16" value="5">
+        </div>
+        <div class="field">
+          <label>Assignments Completed</label>
+          <input type="number" id="assignments_completed" min="0" max="19" value="9">
+        </div>
+        <div class="field">
+          <label>Attendance <span class="unit">(%)</span></label>
+          <input type="number" id="attendance_percentage" min="40" max="100" value="75">
+        </div>
+        <div class="field">
+          <label>Final Grade <span class="unit">(0–100)</span></label>
+          <input type="number" id="final_grade" step="0.1" min="40" max="100" value="70">
+        </div>
+      </div>
+
+      <!-- Lifestyle -->
+      <div class="section-label">Lifestyle & Wellbeing</div>
+      <div class="fields-grid">
+        <div class="field">
+          <label>Sleep Hours / Night <span class="unit">(hrs)</span></label>
+          <input type="number" id="sleep_hours" step="0.1" min="3" max="10" value="7">
+        </div>
+        <div class="field">
+          <label>Exercise <span class="unit">(min/day)</span></label>
+          <input type="number" id="exercise_minutes" min="0" max="119" value="45">
+        </div>
+        <div class="field">
+          <label>Coffee Intake <span class="unit">(mg/day)</span></label>
+          <input type="number" id="coffee_intake_mg" min="0" max="499" value="150">
+        </div>
+        <div class="field">
+          <label>Breaks per Day</label>
+          <input type="number" id="breaks_per_day" min="1" max="14" value="6">
+        </div>
+      </div>
+
+      <!-- Stress + Focus -->
+      <div class="section-label">Mental State</div>
+      <div class="fields-grid full">
+        <div class="field">
+          <label>Stress Level <span class="unit">(1 = calm, 10 = very stressed)</span></label>
+          <div class="range-wrap">
+            <span class="range-val" id="stress_label">5</span>
+            <input type="range" id="stress_level" min="1" max="10" value="5"
+                   oninput="updateRange(this,'stress_label')" style="--pct:44%">
+          </div>
+        </div>
+        <div class="field">
+          <label>Focus Score <span class="unit">(0 = scattered, 100 = laser-focused)</span></label>
+          <div class="range-wrap">
+            <span class="range-val" id="focus_label">60</span>
+            <input type="range" id="focus_score" min="30" max="99" value="60"
+                   oninput="updateRange(this,'focus_label')" style="--pct:43%">
+          </div>
+        </div>
+      </div>
+
+      <!-- Screen time -->
+      <div class="section-label">Digital Distractions</div>
+      <div class="fields-grid trio">
+        <div class="field">
+          <label>Phone <span class="unit">(hrs/day)</span></label>
+          <input type="number" id="phone_usage_hours" step="0.1" min="0.5" max="12" value="4">
+        </div>
+        <div class="field">
+          <label>Social Media <span class="unit">(hrs/day)</span></label>
+          <input type="number" id="social_media_hours" step="0.1" min="0" max="8" value="2">
+        </div>
+        <div class="field">
+          <label>YouTube <span class="unit">(hrs/day)</span></label>
+          <input type="number" id="youtube_hours" step="0.1" min="0" max="6" value="1.5">
+        </div>
+        <div class="field">
+          <label>Gaming <span class="unit">(hrs/day)</span></label>
+          <input type="number" id="gaming_hours" step="0.1" min="0" max="6" value="1">
+        </div>
+      </div>
+
+      <button type="submit" class="btn-predict" id="predictBtn">
+        <div class="spinner"></div>
+        <span class="label">Predict My Productivity →</span>
+      </button>
+    </form>
+  </div>
+
+  <!-- Results -->
+  <div class="results-panel" id="resultsPanel">
+
+    <!-- Score card (placeholder) -->
+    <div class="card score-card" id="scoreCard">
+      <div class="placeholder-state" id="placeholderState">
+        <div class="ph-icon">🎯</div>
+        <p>Fill in your details<br>and hit <strong>Predict</strong> to see your score</p>
+      </div>
+
+      <div id="scoreReveal" style="display:none">
+        <div class="score-ring-wrap">
+          <div class="score-ring">
+            <svg viewBox="0 0 160 160">
+              <circle class="ring-bg" cx="80" cy="80" r="70"/>
+              <circle class="ring-fill" id="ringFill" cx="80" cy="80" r="70"/>
+            </svg>
+            <div class="score-ring-inner">
+              <div class="score-number" id="scoreNumber">0</div>
+              <div class="score-max">/ 100</div>
+            </div>
+          </div>
+        </div>
+        <div id="levelBadge" class="level-badge">—</div>
+        <div class="score-label" id="scoreLabel">—</div>
+        <div class="score-desc" id="scoreDesc">—</div>
+
+        <div class="thresh-bar-wrap">
+          <div class="thresh-labels">
+            <span>Low</span><span>Medium</span><span>High</span>
+          </div>
+          <div class="thresh-bar">
+            <div class="thresh-marker" id="threshMarker"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Metrics row (hidden until result) -->
+    <div class="metrics-row" id="metricsRow" style="display:none">
+      <div class="metric-card">
+        <div class="metric-icon">📱</div>
+        <div class="metric-val" id="m-screen">—</div>
+        <div class="metric-name">Screen hrs/day</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-icon">💪</div>
+        <div class="metric-val" id="m-wellness">—</div>
+        <div class="metric-name">Wellness index</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-icon">📖</div>
+        <div class="metric-val" id="m-ratio">—</div>
+        <div class="metric-name">Study/Sleep ratio</div>
+      </div>
+    </div>
+
+    <!-- Tips -->
+    <div class="card tips-card" id="tipsCard" style="display:none">
+      <div class="tips-title">💡 Personalised Recommendations</div>
+      <div class="tips-list" id="tipsList"></div>
+    </div>
+
+    <!-- Feature importance -->
+    <div class="card importance-card" id="importanceCard" style="display:none">
+      <div class="importance-title">📊 What Drives Your Score</div>
+      <div id="impRows"></div>
+    </div>
+
+  </div>
+</section>
+
+<footer>
+  <span>StudyIQ — Random Forest · 20K students · R² 0.98</span>
+  <span>Built with Flask + scikit-learn</span>
+</footer>
+
+<script>
+/* ── Helpers ───────────────────────────────────────────────── */
+let gender = 'female';
+
+function setGender(btn) {
+  document.querySelectorAll('.gender-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  gender = btn.dataset.val;
+  document.getElementById('gender').value = gender;
+}
+
+function updateRange(el, labelId) {
+  const min = +el.min, max = +el.max, val = +el.value;
+  const pct = ((val - min) / (max - min) * 100).toFixed(1);
+  el.style.setProperty('--pct', pct + '%');
+  document.getElementById(labelId).textContent = val;
+}
+
+/* animate counter */
+function animateNum(el, target, duration=1400, decimals=1) {
+  const start = performance.now();
+  function tick(now) {
+    const t = Math.min((now - start) / duration, 1);
+    const ease = t < 0.5 ? 2*t*t : -1+(4-2*t)*t;
+    el.textContent = (target * ease).toFixed(decimals);
+    if (t < 1) requestAnimationFrame(tick);
+    else el.textContent = target.toFixed(decimals);
+  }
+  requestAnimationFrame(tick);
+}
+
+/* ── Form submit ────────────────────────────────────────────── */
+document.getElementById('predictForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('predictBtn');
+  btn.classList.add('loading');
+
+  const payload = {
+    age:                   +document.getElementById('age').value,
+    gender:                gender,
+    study_hours_per_day:   +document.getElementById('study_hours_per_day').value,
+    sleep_hours:           +document.getElementById('sleep_hours').value,
+    phone_usage_hours:     +document.getElementById('phone_usage_hours').value,
+    social_media_hours:    +document.getElementById('social_media_hours').value,
+    youtube_hours:         +document.getElementById('youtube_hours').value,
+    gaming_hours:          +document.getElementById('gaming_hours').value,
+    breaks_per_day:        +document.getElementById('breaks_per_day').value,
+    coffee_intake_mg:      +document.getElementById('coffee_intake_mg').value,
+    exercise_minutes:      +document.getElementById('exercise_minutes').value,
+    assignments_completed: +document.getElementById('assignments_completed').value,
+    attendance_percentage: +document.getElementById('attendance_percentage').value,
+    stress_level:          +document.getElementById('stress_level').value,
+    focus_score:           +document.getElementById('focus_score').value,
+    final_grade:           +document.getElementById('final_grade').value,
+  };
+
+  try {
+    const res  = await fetch('/predict', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (data.success) renderResults(data);
+    else alert('Error: ' + data.error);
+  } catch(err) {
+    alert('Network error — make sure the Flask server is running.');
+  } finally {
+    btn.classList.remove('loading');
+  }
+});
+
+/* ── Render results ─────────────────────────────────────────── */
+function renderResults(data) {
+  /* show elements */
+  document.getElementById('placeholderState').style.display = 'none';
+  document.getElementById('scoreReveal').style.display      = 'block';
+  document.getElementById('metricsRow').style.display       = 'grid';
+  document.getElementById('tipsCard').style.display         = 'block';
+  document.getElementById('importanceCard').style.display   = 'block';
+  document.getElementById('scoreCard').classList.add('revealed');
+
+  /* ring */
+  const circumference = 2 * Math.PI * 70; // 439.8
+  const pct  = data.score / 100;
+  const fill = document.getElementById('ringFill');
+  const color = data.level === 2 ? '#10b981' : data.level === 1 ? '#f59e0b' : '#ef4444';
+  fill.style.stroke = color;
+  setTimeout(() => {
+    fill.style.strokeDashoffset = circumference * (1 - pct);
+  }, 100);
+
+  /* score number */
+  const numEl = document.getElementById('scoreNumber');
+  numEl.style.color = color;
+  animateNum(numEl, data.score, 1400, 1);
+
+  /* level badge */
+  const badge = document.getElementById('levelBadge');
+  badge.className = 'level-badge ' +
+    (data.level===2 ? 'badge-high' : data.level===1 ? 'badge-medium' : 'badge-low');
+  badge.textContent = data.level===2 ? '🟢 High Productivity'
+                    : data.level===1 ? '🟡 Medium Productivity'
+                    :                  '🔴 Low Productivity';
+
+  /* label + desc */
+  const descs = [
+    'Your productivity is below average. Focus on reducing distractions and improving study consistency.',
+    'You\'re in the middle range. Small improvements in sleep and focus can push you higher.',
+    'Excellent productivity! You\'re outperforming most students. Keep up the great habits.'
+  ];
+  document.getElementById('scoreLabel').textContent = data.label + ' Productivity';
+  document.getElementById('scoreDesc').textContent  = descs[data.level];
+
+  /* threshold marker */
+  const marker = document.getElementById('threshMarker');
+  marker.style.left = data.score + '%';
+
+  /* metrics */
+  document.getElementById('m-screen').textContent   = data.screen_time + ' hrs';
+  document.getElementById('m-wellness').textContent = data.wellness;
+  document.getElementById('m-ratio').textContent    = data.study_ratio + 'x';
+
+  /* tips */
+  const tipsList = document.getElementById('tipsList');
+  tipsList.innerHTML = '';
+  data.tips.forEach((tip, i) => {
+    const div = document.createElement('div');
+    div.className = 'tip-item';
+    div.style.animationDelay = (i * 0.12) + 's';
+    div.textContent = tip;
+    tipsList.appendChild(div);
+  });
+
+  /* feature importance */
+  const impRows = document.getElementById('impRows');
+  impRows.innerHTML = '';
+  const featNames = {
+    study_hours_per_day  : 'Study hrs/day',
+    focus_score          : 'Focus score',
+    study_sleep_ratio    : 'Study/sleep ratio',
+    wellness_score       : 'Wellness score',
+    sleep_hours          : 'Sleep hours',
+    phone_usage_hours    : 'Phone usage',
+    screen_time_total    : 'Total screen time',
+    stress_level         : 'Stress level',
+    attendance_percentage: 'Attendance %',
+    coffee_intake_mg     : 'Coffee (mg)',
+  };
+  data.top_features.forEach((feat, i) => {
+    const pct = data.importances[feat] || 0;
+    const div = document.createElement('div');
+    div.className = 'imp-row';
+    div.innerHTML = `
+      <span class="imp-name">${featNames[feat] || feat}</span>
+      <div class="imp-bar-bg"><div class="imp-bar-fill" style="width:0%" data-w="${pct}%"></div></div>
+      <span class="imp-pct">${pct}%</span>`;
+    impRows.appendChild(div);
+  });
+
+  /* animate bars */
+  setTimeout(() => {
+    document.querySelectorAll('.imp-bar-fill').forEach(el => {
+      el.style.width = el.dataset.w;
+    });
+  }, 200);
+
+  /* scroll to results on mobile */
+  if (window.innerWidth < 860) {
+    document.getElementById('scoreCard').scrollIntoView({behavior:'smooth', block:'start'});
+  }
+
+  /* update hero ring preview */
+  const previewNum = document.querySelector('.ring-preview-inner .num');
+  if (previewNum) animateNum(previewNum, data.score, 1400, 0);
+  const ring = document.querySelector('.ring-preview');
+  if (ring) ring.style.background =
+    `conic-gradient(${color} 0% ${data.score}%, var(--line) ${data.score}% 100%)`;
+}
+</script>
+</body>
+</html>
